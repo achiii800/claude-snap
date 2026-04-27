@@ -1,0 +1,21 @@
+# Real session files contain pasted code and possibly secrets — never commit.
+*.jsonl
+!examples/synthetic_session.jsonl
+
+# Packed sessions
+*.ctxp.jsonl
+*.unpacked.jsonl
+
+# Python build / install
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
