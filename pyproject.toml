@@ -3,13 +3,13 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ctxport"
+name = "claude-snap"
 version = "0.1.0"
 description = "Lossless structural codec for Claude Code session JSONLs — portable conversation snapshots that move between devices."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
-  { name = "ctxport contributors" }
+  { name = "claude-snap contributors" }
 ]
 requires-python = ">=3.9"
 keywords = [
@@ -34,13 +34,13 @@ dev = ["pytest>=7.0", "build>=1.0"]
 publish = ["build>=1.0", "twine>=4.0"]
 
 [project.scripts]
-ctxport = "ctxport.cli:main"
+claude-snap = "claude_snap.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/achiii800/ctxport"
-Source = "https://github.com/achiii800/ctxport"
-Issues = "https://github.com/achiii800/ctxport/issues"
+Homepage = "https://github.com/achiii800/claude-snap"
+Source = "https://github.com/achiii800/claude-snap"
+Issues = "https://github.com/achiii800/claude-snap/issues"
 
 [tool.setuptools.packages.find]
-include = ["ctxport*"]
+include = ["claude_snap*"]
 exclude = ["tests*", "examples*"]

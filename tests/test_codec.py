@@ -1,5 +1,5 @@
 """
-Tests for the ctxport codec.
+Tests for the claude-snap codec.
 
 Key property: pack-then-unpack restores original event payloads in order.
 """
@@ -7,7 +7,7 @@ Key property: pack-then-unpack restores original event payloads in order.
 import json
 from pathlib import Path
 
-from ctxport import codec
+from claude_snap import codec
 
 
 EXAMPLE = Path(__file__).parent.parent / "examples" / "synthetic_session.jsonl"
@@ -66,7 +66,7 @@ def test_no_user_or_assistant_msg_is_dedup_d():
     )
     user_assistant_out = sum(
         1 for x in packed
-        if x.get("type") == "ctxport_event"
+        if x.get("type") == "snap_event"
         and x.get("kind") in ("user_msg", "assistant_msg")
     )
     assert user_assistant_in == user_assistant_out
@@ -79,7 +79,7 @@ def test_mutation_invalidates_dedup():
 
     full_event_tool_ids = [
         x.get("tool_id") for x in packed
-        if x.get("type") == "ctxport_event" and x.get("kind") == "tool_result"
+        if x.get("type") == "snap_event" and x.get("kind") == "tool_result"
     ]
     assert "toolu_01" in full_event_tool_ids, \
         "first read of client.py should be a full event"
@@ -92,7 +92,7 @@ def test_repeat_read_is_ref_d():
     events = codec.parse(str(EXAMPLE))
     packed = codec.pack(events)
     ref_tool_ids = [
-        x.get("tool_id") for x in packed if x.get("type") == "ctxport_ref"
+        x.get("tool_id") for x in packed if x.get("type") == "snap_ref"
     ]
     assert "toolu_03" in ref_tool_ids, \
         f"expected toolu_03 (re-read of unchanged client.py) to be ref'd. " \
@@ -104,7 +104,7 @@ def test_repeat_bash_with_same_output_is_ref_d():
     events = codec.parse(str(EXAMPLE))
     packed = codec.pack(events)
     ref_tool_ids = [
-        x.get("tool_id") for x in packed if x.get("type") == "ctxport_ref"
+        x.get("tool_id") for x in packed if x.get("type") == "snap_ref"
     ]
     assert "toolu_08" in ref_tool_ids, \
         f"expected toolu_08 (repeat pytest output) to be ref'd. " \
@@ -148,7 +148,7 @@ def test_real_format_metadata_is_preserved_through_dedup():
         packed = codec.pack(events)
         unpacked = codec.unpack(packed)
         # The second tool_result should be ref'd (duplicate Bash output).
-        refs = [x for x in packed if x.get("type") == "ctxport_ref"]
+        refs = [x for x in packed if x.get("type") == "snap_ref"]
         assert len(refs) == 1, f"expected 1 ref, got {len(refs)}"
         # And the restored payload must equal the original byte-for-byte.
         assert unpacked == events_raw
@@ -184,7 +184,7 @@ def test_edit_results_are_never_dedup_d():
         events = codec.parse(path)
         packed = codec.pack(events)
         unpacked = codec.unpack(packed)
-        refs = [x for x in packed if x.get("type") == "ctxport_ref"]
+        refs = [x for x in packed if x.get("type") == "snap_ref"]
         assert refs == [], f"Edit results must not be ref'd, got: {refs}"
         assert unpacked == events_raw
     finally:
@@ -194,16 +194,16 @@ def test_edit_results_are_never_dedup_d():
 def test_dangling_ref_is_handled():
     """Unpack should not crash on refs whose target is missing."""
     bogus = [
-        {"type": "ctxport_header", "version": "0.1.0",
+        {"type": "snap_header", "version": "0.1.0",
          "original_event_count": 0},
-        {"type": "ctxport_ref", "kind": "ref", "seq": 5, "ref_to": "deadbeef",
+        {"type": "snap_ref", "kind": "ref", "seq": 5, "ref_to": "deadbeef",
          "reason": "unchanged_read"},
-        {"type": "ctxport_footer", "events_in": 0, "events_out": 1,
+        {"type": "snap_footer", "events_in": 0, "events_out": 1,
          "refs_introduced": 1},
     ]
     out = codec.unpack(bogus)
     assert len(out) == 1
-    assert out[0].get("type") == "ctxport_dangling_ref"
+    assert out[0].get("type") == "snap_dangling_ref"
 
 
 if __name__ == "__main__":

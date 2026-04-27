@@ -3,7 +3,7 @@
 !examples/synthetic_session.jsonl
 
 # Packed sessions
-*.ctxp.jsonl
+*.snap.jsonl
 *.unpacked.jsonl
 
 # Python build / install

@@ -1,9 +1,9 @@
-# ctxport
+# claude-snap
 
 **Portable, lossless snapshots of Claude Code sessions.**
 
 `--fork-session` is a Claude Code primitive that already works locally: pick up
-where you left off in a new shell, with full context. ctxport is the same
+where you left off in a new shell, with full context. claude-snap is the same
 primitive when the destination is a different device.
 
 Pack a session JSONL on your laptop. Drop the artifact into a Claude chat on
@@ -17,9 +17,9 @@ summarizer. Not a markdown renderer. It's a codec.
 ## What's in the box
 
 ```
-ctxport pack    session.jsonl  →  session.ctxp.jsonl   # compress
-ctxport unpack  session.ctxp.jsonl  →  session.jsonl   # restore (byte-identical events)
-ctxport stats   session.ctxp.jsonl                     # how much did we save
+claude-snap pack    session.jsonl  →  session.snap.jsonl   # compress
+claude-snap unpack  session.snap.jsonl  →  session.jsonl   # restore (byte-identical events)
+claude-snap stats   session.snap.jsonl                     # how much did we save
 ```
 
 Zero runtime deps. Pure stdlib Python 3.9+. MIT.
@@ -27,7 +27,7 @@ Zero runtime deps. Pure stdlib Python 3.9+. MIT.
 ## Install
 
 ```bash
-pip install ctxport
+pip install claude-snap
 ```
 
 ## End-to-end UX
@@ -36,10 +36,10 @@ Today (manual, but works on day one):
 
 1. On your laptop, after a Claude Code session:
    ```bash
-   ctxport pack ~/.claude/projects/<encoded-path>/<uuid>.jsonl
-   # → <uuid>.ctxp.jsonl
+   claude-snap pack ~/.claude/projects/<encoded-path>/<uuid>.jsonl
+   # → <uuid>.snap.jsonl
    ```
-2. Move the `.ctxp.jsonl` to your phone — AirDrop, iCloud Drive, email-to-self,
+2. Move the `.snap.jsonl` to your phone — AirDrop, iCloud Drive, email-to-self,
    gist, whatever moves a text file.
 3. On your phone, open Claude (mobile app or claude.ai), upload/paste the file,
    and tell Claude *"this is a packed prior session — use it as context."*
@@ -49,7 +49,7 @@ Today (manual, but works on day one):
 Reattaching to laptop:
 
 ```bash
-ctxport unpack session.ctxp.jsonl   # → session.jsonl, byte-identical events
+claude-snap unpack session.snap.jsonl   # → session.jsonl, byte-identical events
 ```
 
 Drop the unpacked JSONL back into `~/.claude/projects/<...>/` and Claude Code

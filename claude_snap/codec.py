@@ -1,5 +1,5 @@
 """
-The ctxport codec.
+The claude-snap codec.
 
 Heuristics, in priority order:
   1. User and assistant messages: kept verbatim, always.
@@ -7,7 +7,7 @@ Heuristics, in priority order:
   3. First Read of a given file: kept verbatim.
   4. Re-Read of a file with identical content AND no Edit/Write to that path
      between the two reads: replace the second read's tool_result with a
-     ctxport_ref pointing to the first.
+     snap_ref pointing to the first.
   5. Identical Bash tool_results (content-hash match): ref the duplicate.
   6. Anything else (TodoWrite, MultiEdit, Glob, Grep, custom MCP tools):
      pass through verbatim.
@@ -15,7 +15,9 @@ Heuristics, in priority order:
 Correctness condition: unpack(pack(events)) == events byte-for-byte,
 modulo the header/footer metadata. When resolving a ref on unpack, the
 restored payload's tool_use_id is patched to the ref event's id so the
-tool_use ↔ tool_result linkage stays correct.
+tool_use ↔ tool_result linkage stays correct, and any captured per-event
+metadata (uuid, parentUuid, timestamp, ...) is overlaid on the restored
+payload.
 """
 
 from __future__ import annotations
@@ -29,7 +31,7 @@ from .schema import (
 )
 
 
-CTXPORT_VERSION = "0.1.0"
+CLAUDE_SNAP_VERSION = "0.1.0"
 
 # Tool families whose results are safe to dedup. Mutating tools
 # (Edit/Write/MultiEdit/NotebookEdit) and meta tools (TodoWrite/Task) are
@@ -64,13 +66,10 @@ def parse(jsonl_path: str) -> list:
 
 
 def pack(events: list) -> list:
-    """
-    Apply the dedup heuristics. Returns a list of JSON-serializable dicts
-    suitable for writing as JSONL.
-    """
+    """Apply the dedup heuristics. Returns JSON-serializable dicts."""
     out: list = [{
-        "type": "ctxport_header",
-        "version": CTXPORT_VERSION,
+        "type": "snap_header",
+        "version": CLAUDE_SNAP_VERSION,
         "original_event_count": len(events),
     }]
 
@@ -80,7 +79,6 @@ def pack(events: list) -> list:
     tool_use_index: dict = {}        # tool_id -> Event
 
     for ev in events:
-        # Mutation tracking comes first — affects later dedup decisions.
         if ev.kind == TOOL_USE and is_mutating(ev) and ev.target_path:
             last_mutation_seq[ev.target_path] = ev.seq
 
@@ -135,9 +133,9 @@ def pack(events: list) -> list:
 
         out.append(_emit(ev))
 
-    refs = sum(1 for x in out if x.get("type") == "ctxport_ref")
+    refs = sum(1 for x in out if x.get("type") == "snap_ref")
     out.append({
-        "type": "ctxport_footer",
+        "type": "snap_footer",
         "events_in": len(events),
         "events_out": len(out) - 2,
         "refs_introduced": refs,
@@ -146,9 +144,9 @@ def pack(events: list) -> list:
 
 
 def _emit(ev: Event) -> dict:
-    """Serialize an Event to a ctxport JSONL line. Drop None fields."""
+    """Serialize an Event to a snap JSONL line. Drop None fields."""
     rec = {
-        "type": "ctxport_event",
+        "type": "snap_event",
         "kind": ev.kind,
         "seq": ev.seq,
         "content_hash": ev.content_hash,
@@ -165,7 +163,7 @@ def _emit(ev: Event) -> dict:
 
 def _emit_ref(ev: Event, ref_to: str, reason: str, path: str = None) -> dict:
     out = {
-        "type": "ctxport_ref",
+        "type": "snap_ref",
         "kind": REF,
         "seq": ev.seq,
         "ref_to": ref_to,
@@ -195,18 +193,18 @@ def unpack(packed: list) -> list:
 
     for x in packed:
         t = x.get("type")
-        if t in ("ctxport_header", "ctxport_footer"):
+        if t in ("snap_header", "snap_footer"):
             continue
-        if t == "ctxport_event":
+        if t == "snap_event":
             by_hash[x["content_hash"]] = x["payload"]
             out.append(x["payload"])
             continue
-        if t == "ctxport_ref":
+        if t == "snap_ref":
             ref_to = x.get("ref_to")
             payload = by_hash.get(ref_to)
             if payload is None:
                 out.append({
-                    "type": "ctxport_dangling_ref",
+                    "type": "snap_dangling_ref",
                     "ref_to": ref_to,
                     "seq": x.get("seq"),
                 })
@@ -237,24 +235,23 @@ def write_jsonl(records: list, path: str) -> None:
 
 def stats(packed: list) -> dict:
     """Compression stats from a packed stream."""
-    events = sum(1 for x in packed if x.get("type") == "ctxport_event")
-    refs = sum(1 for x in packed if x.get("type") == "ctxport_ref")
+    events = sum(1 for x in packed if x.get("type") == "snap_event")
+    refs = sum(1 for x in packed if x.get("type") == "snap_ref")
 
-    # Build a hash → packed-event-bytes index so ref payload lookup is O(1).
     event_bytes_by_hash: dict = {}
     for x in packed:
-        if x.get("type") == "ctxport_event":
+        if x.get("type") == "snap_event":
             event_bytes_by_hash[x["content_hash"]] = len(json.dumps(x))
 
     full_bytes = 0
     packed_bytes = 0
     for x in packed:
         t = x.get("type")
-        if t == "ctxport_event":
+        if t == "snap_event":
             b = len(json.dumps(x))
             full_bytes += b
             packed_bytes += b
-        elif t == "ctxport_ref":
+        elif t == "snap_ref":
             full_bytes += event_bytes_by_hash.get(x.get("ref_to"), 0)
             packed_bytes += len(json.dumps(x))
 

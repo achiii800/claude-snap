@@ -1,7 +1,7 @@
-"""ctxport — portable, lossless snapshots of Claude Code sessions."""
+"""claude-snap — portable, lossless snapshots of Claude Code sessions."""
 
 from .codec import (
-    CTXPORT_VERSION,
+    CLAUDE_SNAP_VERSION,
     pack,
     unpack,
     parse,
@@ -9,9 +9,9 @@ from .codec import (
     write_jsonl,
 )
 
-__version__ = CTXPORT_VERSION
+__version__ = CLAUDE_SNAP_VERSION
 __all__ = [
-    "CTXPORT_VERSION",
+    "CLAUDE_SNAP_VERSION",
     "__version__",
     "pack",
     "unpack",

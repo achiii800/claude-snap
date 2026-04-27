@@ -1,4 +1,4 @@
-"""ctxport CLI — pack, unpack, stats."""
+"""claude-snap CLI — pack, unpack, stats."""
 
 from __future__ import annotations
 import argparse
@@ -13,7 +13,7 @@ def _cmd_pack(args):
     events = codec.parse(args.input)
     packed = codec.pack(events)
 
-    out_path = args.output or _swap_ext(args.input, ".ctxp.jsonl")
+    out_path = args.output or _swap_ext(args.input, ".snap.jsonl")
     codec.write_jsonl(packed, out_path)
 
     s = codec.stats(packed)
@@ -47,17 +47,17 @@ def _swap_ext(path: str, new_ext: str) -> str:
 
 def main(argv=None):
     parser = argparse.ArgumentParser(
-        prog="ctxport",
+        prog="claude-snap",
         description="Lossless structural codec for Claude Code session JSONLs."
     )
     parser.add_argument("--version", action="version",
-                        version=f"ctxport {codec.CTXPORT_VERSION}")
+                        version=f"claude-snap {codec.CLAUDE_SNAP_VERSION}")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_pack = sub.add_parser("pack", help="compress a session JSONL")
     p_pack.add_argument("input", help="path to source .jsonl")
     p_pack.add_argument("-o", "--output",
-                        help="output path (default: <input>.ctxp.jsonl)")
+                        help="output path (default: <input>.snap.jsonl)")
     p_pack.set_defaults(func=_cmd_pack)
 
     p_unp = sub.add_parser("unpack", help="restore a packed JSONL")
