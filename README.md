@@ -110,19 +110,40 @@ retain what it has already seen), expect close to 1.0× — and that's
 correct, not a bug. The artifact is still portable and lossless, which is
 the point. Compression is incidental.
 
-## Why this exists
+## Where this sits in the ecosystem
 
-The space around Claude Code history has two kinds of tools:
+The space around moving Claude Code sessions between machines has more
+tools than you'd think. They each solve a *different* shape of the
+problem:
 
-- **Dumpers** (`claude-conversation-extractor`, `cctrace`,
-  `claude-code-history-mcp`) give you the full firehose. Hit context window
-  limits the moment a session has nontrivial Read/Bash bloat.
-- **AI summarizers** (`claude-mem`) give you a summary. Lossy by design.
-  Throws away the chain-of-changes that's the whole point.
+| Tool | Approach | Lossless? | Byte-identical roundtrip? | Codec? | Single artifact? | Network setup? |
+|---|---|---|---|---|---|---|
+| [claude-mem](https://github.com/thedotmack/claude-mem) | AI summarization via agent-sdk | no — lossy by design | no | no (summarizer) | yes | none |
+| [cctrace](https://github.com/jimmc414/cctrace) | Markdown / XML render + verbatim JSONL copy | partial — md/xml lossy, JSONL copy lossless | the JSONL copy yes; the renders no | no (transcriber) | bundle dir | none |
+| [claude-conversation-extractor](https://github.com/ZeroSumQuant/claude-conversation-extractor) | Markdown export | no — markdown loses JSON structure | no | no (extractor) | yes | none |
+| [session-roam](https://github.com/VirelNode/session-roam) | Syncthing P2P sync of `~/.claude/projects/` | yes (it's the same file) | trivially | no — file sync, structure-blind | no — the live directory | Syncthing peering, both nodes online |
+| [claude-handoff](https://github.com/NeoAcar/claude-handoff) | Git-based bundle with absolute-path scrubbing & secret redaction | structurally yes | **no — paths intentionally rewritten** | partial — structural transformer | yes (`.claude-shared/` dir) | shared git repo |
+| **claude-snap** (this repo) | sha256 content-hash refs in JSONL stream, mutation-aware structural dedup, per-event metadata patched on restore | yes | **yes — regression-tested** | yes — true codec | yes (single `.snap.jsonl`) | none |
 
-Neither lets you "transplant the session into a fresh chat on another device
-and pick up where you left off." That requires the *real* conversation, just
-without the redundant payload bytes.
+Where claude-snap is unique:
+
+- It's the only one of these that's a **true codec** — encoding/decoding
+  between two valid representations of the *same* data, not a render, not
+  a summary, not a sync, not a transformer.
+- It produces a **single portable artifact** that roundtrips byte-for-byte.
+  No peer setup, no shared repo, no online dependencies, no path
+  rewriting.
+- It composes with everything else. cctrace bundles include a JSONL copy
+  that ships unchanged through claude-snap. claude-handoff's normalized
+  bundles can be packed before commit. session-roam's synced directory is
+  the input.
+
+If your problem is *"I want both my machines online and the directory
+mirrored"*, use session-roam. If it's *"I want to share sessions through
+a git repo, with secrets and absolute paths scrubbed"*, use
+claude-handoff. If it's *"I want a single small file I can drop into
+another Claude chat or commit to a repo, byte-identical on roundtrip"*,
+use claude-snap.
 
 ## Roadmap
 
