@@ -1,0 +1,12 @@
+{
+  "name": "claude-snap",
+  "description": "Lossless structural codec for Claude Code session JSONLs — portable, byte-identical conversation snapshots that move between devices.",
+  "version": "0.2.0",
+  "author": {
+    "name": "achiii800",
+    "url": "https://github.com/achiii800"
+  },
+  "homepage": "https://github.com/achiii800/claude-snap",
+  "repository": "https://github.com/achiii800/claude-snap",
+  "keywords": ["claude-code", "codec", "session", "fork-session", "portability", "lossless"]
+}

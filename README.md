@@ -30,6 +30,28 @@ Zero runtime deps. Pure stdlib Python 3.9+. MIT.
 pip install claude-snap
 ```
 
+### As a Claude Code plugin
+
+This repo doubles as a [Claude Code plugin](https://docs.claude.com/en/docs/claude-code/plugins).
+Install it from inside Claude Code to get four slash commands:
+
+```
+/plugin install achiii800/claude-snap
+```
+
+| Command | What it does |
+|---|---|
+| `/snap` | Status: shows version, locates the most recent session JSONL, explains the rest. |
+| `/snap-pack [path]` | Pack a session JSONL into `.snap.jsonl`. Defaults to most recent. |
+| `/snap-stats [path]` | Compression stats on a packed file. |
+| `/snap-share [path]` | Pack and drop the artifact at `$CLAUDE_SNAP_DROP_PATH` (or `~/Documents/claude-snaps`). Pair with iCloud Drive / Dropbox / Syncthing for hands-off cross-device handoff. |
+
+See [PLUGIN.md](./PLUGIN.md) for full plugin docs and the cross-device workflow.
+
+For auto-pack-on-session-end, see [`examples/hooks/snap_pack_on_stop.py`](./examples/hooks/snap_pack_on_stop.py)
+— a robust, opt-in `Stop` hook (also submitted upstream as a PR to
+`anthropics/claude-code/examples/hooks/`).
+
 ## End-to-end UX
 
 Today (manual, but works on day one):
