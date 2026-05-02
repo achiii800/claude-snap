@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d1117">
+  <meta name="description" content="claude-snap PWA — drop a Claude Code session snapshot into a portable client. Read the conversation, ask follow-ups, on any device.">
+
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src https://api.anthropic.com; img-src 'self' data:; font-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests">
+  <meta http-equiv="Strict-Transport-Security" content="max-age=63072000; includeSubDomains; preload">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="Referrer-Policy" content="no-referrer">
+  <meta http-equiv="Permissions-Policy" content="geolocation=(), camera=(), microphone=(), payment=(), usb=(), interest-cohort=()">
+
+  <title>claude-snap</title>
+
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <strong>claude-snap</strong>
+      <span class="tag">portable session reader</span>
+    </div>
+    <button id="forget-key-btn" type="button" class="ghost hidden" title="Remove your API key from this browser">Forget key</button>
+  </header>
+
+  <main id="app">
+    <section id="security-banner" class="banner">
+      <p>
+        Everything happens in this browser tab. Your <code>.snap.jsonl</code> is parsed locally and never uploaded.
+        Your Anthropic API key, if you provide one, is stored only in this browser's <code>localStorage</code> and is sent only to <code>api.anthropic.com</code>.
+        Source: <a href="https://github.com/achiii800/claude-snap" rel="noopener">github.com/achiii800/claude-snap</a>.
+        Threat model: <a href="https://github.com/achiii800/claude-snap/blob/main/docs/SECURITY.md" rel="noopener">SECURITY.md</a>.
+      </p>
+    </section>
+
+    <section id="upload" class="card">
+      <h2>1 &middot; Load a session</h2>
+      <p class="hint">Drop a <code>.snap.jsonl</code> here, paste it as text, or pick a file. The original Claude Code <code>.jsonl</code> works too — uncompressed sessions render the same.</p>
+      <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload .snap.jsonl">
+        <input type="file" id="file-input" accept=".jsonl,.snap.jsonl,application/x-ndjson,application/json,text/plain" hidden>
+        <p>Drop a session file here, click to browse, or paste below.</p>
+      </div>
+      <details>
+        <summary>Or paste the JSONL contents</summary>
+        <textarea id="paste-area" rows="6" placeholder="Paste .snap.jsonl or .jsonl text here…" spellcheck="false" autocapitalize="off" autocorrect="off"></textarea>
+        <button id="paste-load-btn" type="button">Load pasted text</button>
+      </details>
+      <p id="load-status" class="status" aria-live="polite"></p>
+    </section>
+
+    <section id="transcript-section" class="card hidden">
+      <h2>2 &middot; Transcript</h2>
+      <p class="hint">Read-only view of the unpacked session. The receiver-side has no executor — you can read, ideate, and ask follow-ups, not Edit / Write / Bash.</p>
+      <div id="transcript-meta" class="meta"></div>
+      <div id="transcript" class="transcript"></div>
+    </section>
+
+    <section id="chat-section" class="card hidden">
+      <h2>3 &middot; Continue the conversation</h2>
+      <p class="hint">Ask a follow-up. The full unpacked session is sent as context to <code>api.anthropic.com</code> using the API key stored only in this browser.</p>
+
+      <div id="key-row" class="key-row">
+        <label for="api-key-input">Anthropic API key</label>
+        <input type="password" id="api-key-input" autocomplete="off" placeholder="sk-ant-…" spellcheck="false" autocapitalize="off">
+        <label class="checkbox">
+          <input type="checkbox" id="remember-key"> Remember in this browser
+        </label>
+        <select id="model-select" aria-label="Model">
+          <option value="claude-opus-4-7">claude-opus-4-7</option>
+          <option value="claude-sonnet-4-6" selected>claude-sonnet-4-6</option>
+          <option value="claude-haiku-4-5-20251001">claude-haiku-4-5</option>
+        </select>
+      </div>
+
+      <textarea id="user-input" rows="4" placeholder="Pick up where the laptop session left off…" spellcheck="false" autocapitalize="sentences"></textarea>
+      <div class="row">
+        <button id="send-btn" type="button">Ask Claude</button>
+        <span id="chat-status" class="status" aria-live="polite"></span>
+      </div>
+
+      <div id="chat-log" class="chat-log"></div>
+    </section>
+  </main>
+
+  <footer>
+    <a href="https://github.com/achiii800/claude-snap" rel="noopener">github</a>
+    &middot;
+    <a href="https://pypi.org/project/claude-snap/" rel="noopener">pypi</a>
+    &middot;
+    <a href="https://github.com/achiii800/claude-snap/blob/main/docs/SECURITY.md" rel="noopener">security</a>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

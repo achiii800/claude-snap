@@ -1,0 +1,16 @@
+{
+  "name": "claude-snap — portable session reader",
+  "short_name": "claude-snap",
+  "description": "Drop a .snap.jsonl into a chat and keep going on any device. Lossless, client-side, your API key never leaves the browser.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "categories": ["productivity", "developer", "utilities"]
+}

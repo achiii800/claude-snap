@@ -30,6 +30,25 @@ Zero runtime deps. Pure stdlib Python 3.9+. MIT.
 pip install claude-snap
 ```
 
+### As a hosted PWA (no install, works on phones)
+
+[**claude-snap.app on GitHub Pages**](https://achiii800.github.io/claude-snap/) —
+drop a `.snap.jsonl` into a static, no-backend web app. The session
+unpacks **in your browser**, renders as a transcript, and you can ask
+follow-up questions using your own Anthropic API key. Works on iOS
+Safari, Android Chrome, desktop browsers. Installable as a PWA via
+*Add to Home Screen*. No App Store, no sideloading, no Apple developer
+subscription, no server backend.
+
+Security: zero third-party dependencies, strict CSP locking outbound
+network to `api.anthropic.com` only, your key in `localStorage` only,
+your `.snap.jsonl` never uploaded anywhere. See
+[`docs/SECURITY.md`](./docs/SECURITY.md) for the full threat model.
+
+If you don't trust GitHub Pages, the PWA runs locally with
+`python3 -m http.server` in the `docs/` directory — same code, your
+own origin.
+
 ### As a Claude Code plugin
 
 This repo doubles as a [Claude Code plugin](https://docs.claude.com/en/docs/claude-code/plugins).
