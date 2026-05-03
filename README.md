@@ -30,24 +30,57 @@ Zero runtime deps. Pure stdlib Python 3.9+. MIT.
 pip install claude-snap
 ```
 
-### As a hosted PWA (no install, works on phones)
+## Trust modes
 
-[**claude-snap.app on GitHub Pages**](https://achiii800.github.io/claude-snap/) —
-drop a `.snap.jsonl` into a static, no-backend web app. The session
-unpacks **in your browser**, renders as a transcript, and you can ask
-follow-up questions using your own Anthropic API key. Works on iOS
-Safari, Android Chrome, desktop browsers. Installable as a PWA via
-*Add to Home Screen*. No App Store, no sideloading, no Apple developer
-subscription, no server backend.
+Three ways to use the chat surface, with different trust profiles.
 
-Security: zero third-party dependencies, strict CSP locking outbound
-network to `api.anthropic.com` only, your key in `localStorage` only,
-your `.snap.jsonl` never uploaded anywhere. See
-[`docs/SECURITY.md`](./docs/SECURITY.md) for the full threat model.
+### `claude-snap chat <file>` — local mode (recommended for any device that can `pip install`)
 
-If you don't trust GitHub Pages, the PWA runs locally with
-`python3 -m http.server` in the `docs/` directory — same code, your
-own origin.
+```bash
+pip install claude-snap
+export ANTHROPIC_API_KEY=sk-ant-...
+claude-snap chat ~/.claude/projects/<encoded>/<uuid>.jsonl
+```
+
+Spawns a tiny localhost HTTP server, opens the bundled PWA in your
+browser, autoloads the session. The local server holds the API key (read
+from your shell env) and proxies API calls to Anthropic. **The browser
+never sees the credential.** Bind is `127.0.0.1` only; `Host`-header
+allowlist refuses non-local origins; path-traversal blocked; bad-JSON
+rejected before reaching upstream.
+
+Trust shifts to: `pip install claude-snap` (which you trust if you use
+the codec at all). Same UI as the hosted PWA, fundamentally different
+trust model.
+
+### Hosted PWA — [achiii800.github.io/claude-snap](https://achiii800.github.io/claude-snap/)
+
+For devices where you can't `pip install` (iOS, locked-down corp
+laptops, etc.). Static, no-backend web app — drop a `.snap.jsonl`, read
+the transcript without entering anything. The chat surface is **opt-in**
+and clearly labeled as such; if you only want to read, no key required
+ever. If you do want to chat, you paste your API key into the page
+(stored in `localStorage` only, sent only to `api.anthropic.com`).
+
+Strict CSP locks outbound network to `api.anthropic.com`. Zero
+third-party JS. All conversation rendering via `textContent`, never
+`innerHTML`. Installable as a PWA via *Add to Home Screen*. See
+[`claude_snap/web/SECURITY.md`](./claude_snap/web/SECURITY.md) for the
+full threat model.
+
+### Self-host the PWA from your own origin
+
+If you don't trust GitHub Pages or the `*.github.io` shared origin:
+
+```bash
+git clone https://github.com/achiii800/claude-snap.git
+cd claude-snap/claude_snap/web
+python3 -m http.server 8080
+# open http://localhost:8080/
+```
+
+Same code, your own origin. (At this point you might as well use
+`claude-snap chat`, which adds the credential isolation on top.)
 
 ### As a Claude Code plugin
 

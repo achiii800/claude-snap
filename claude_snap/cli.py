@@ -69,8 +69,31 @@ def main(argv=None):
     p_st.add_argument("input")
     p_st.set_defaults(func=_cmd_stats)
 
+    p_chat = sub.add_parser(
+        "chat",
+        help="open the bundled PWA in your browser via a localhost proxy "
+             "that holds the API key (set ANTHROPIC_API_KEY in your shell)",
+    )
+    p_chat.add_argument("input", nargs="?",
+                        help="optional path to a .snap.jsonl (or .jsonl) "
+                             "to autoload in the page")
+    p_chat.add_argument("--port", type=int, default=0,
+                        help="port to bind on 127.0.0.1 (default: random free port)")
+    p_chat.add_argument("--no-browser", action="store_true",
+                        help="don't open a browser tab automatically")
+    p_chat.set_defaults(func=_cmd_chat)
+
     args = parser.parse_args(argv)
     return args.func(args)
+
+
+def _cmd_chat(args):
+    from . import serve
+    return serve.serve(
+        snap_path=args.input,
+        port=args.port,
+        open_browser=(not args.no_browser),
+    )
 
 
 if __name__ == "__main__":

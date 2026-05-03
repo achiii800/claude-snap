@@ -334,6 +334,15 @@ footer a:hover {
 
 .hidden { display: none !important; }
 
+.optional {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+  margin-left: 6px;
+}
+
+.hint strong { color: var(--text); }
+
 @media (max-width: 600px) {
   .key-row {
     grid-template-columns: 1fr;

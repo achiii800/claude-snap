@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "claude-snap"
-version = "0.2.0"
-description = "Lossless structural codec for Claude Code session JSONLs — portable conversation snapshots that move between devices."
+version = "0.3.0"
+description = "Lossless structural codec for Claude Code session JSONLs — portable conversation snapshots that move between devices, plus a built-in localhost chat surface that keeps your API key out of the browser."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
@@ -15,7 +15,7 @@ requires-python = ">=3.9"
 keywords = [
   "claude", "claude-code", "agentic", "jsonl",
   "codec", "compression", "context", "portability",
-  "fork-session",
+  "fork-session", "pwa",
 ]
 classifiers = [
   "License :: OSI Approved :: MIT License",
@@ -40,7 +40,18 @@ claude-snap = "claude_snap.cli:main"
 Homepage = "https://github.com/achiii800/claude-snap"
 Source = "https://github.com/achiii800/claude-snap"
 Issues = "https://github.com/achiii800/claude-snap/issues"
+PWA = "https://achiii800.github.io/claude-snap/"
 
 [tool.setuptools.packages.find]
 include = ["claude_snap*"]
 exclude = ["tests*", "examples*"]
+
+[tool.setuptools.package-data]
+"claude_snap" = [
+  "web/*.html",
+  "web/*.js",
+  "web/*.css",
+  "web/*.json",
+  "web/*.md",
+  "web/*.png",
+]

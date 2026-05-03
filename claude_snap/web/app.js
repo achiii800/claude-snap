@@ -1,5 +1,7 @@
 // claude-snap PWA — front-end app logic.
-// All state stays in this tab; the only network endpoint is api.anthropic.com.
+// Hosted mode: state stays in this tab; the only network endpoint is api.anthropic.com.
+// Local mode (served by `claude-snap chat` on localhost): the only network endpoint
+// is the local proxy; the API key never reaches the browser.
 
 import { readJsonl, isPacked, unpack, eventsToMessages, stats } from './codec.js';
 
@@ -7,6 +9,13 @@ const STORAGE_KEY = 'claude-snap.api-key.v1';
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_VERSION = '2023-06-01';
 const MAX_TOKENS_DEFAULT = 4096;
+
+const IS_LOCAL_MODE = (
+  location.hostname === 'localhost'
+  || location.hostname === '127.0.0.1'
+  || location.hostname === '[::1]'
+);
+const CHAT_ENDPOINT = IS_LOCAL_MODE ? '/api/messages' : ANTHROPIC_API_URL;
 
 const $ = (id) => document.getElementById(id);
 
@@ -208,8 +217,8 @@ function collapseAdjacent(messages) {
 }
 
 async function sendMessage() {
-  const apiKey = els.apiKeyInput.value.trim();
-  if (!apiKey) {
+  const apiKey = IS_LOCAL_MODE ? '' : els.apiKeyInput.value.trim();
+  if (!IS_LOCAL_MODE && !apiKey) {
     setStatus(els.chatStatus, 'API key required.', 'error');
     return;
   }
@@ -225,18 +234,23 @@ async function sendMessage() {
   const messages = buildRequestMessages(userText);
 
   els.sendBtn.disabled = true;
-  setStatus(els.chatStatus, 'Sending to api.anthropic.com…');
+  setStatus(els.chatStatus,
+    IS_LOCAL_MODE ? 'Sending via localhost proxy…' : 'Sending to api.anthropic.com…');
   appendLiveTurn('user', userText);
 
   try {
-    const resp = await fetch(ANTHROPIC_API_URL, {
+    const headers = { 'content-type': 'application/json' };
+    if (!IS_LOCAL_MODE) {
+      // Hosted mode: browser holds and sends the key.
+      headers['x-api-key'] = apiKey;
+      headers['anthropic-version'] = ANTHROPIC_VERSION;
+      headers['anthropic-dangerous-direct-browser-access'] = 'true';
+    }
+    // Local mode: the localhost proxy attaches x-api-key from $ANTHROPIC_API_KEY.
+
+    const resp = await fetch(CHAT_ENDPOINT, {
       method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': ANTHROPIC_VERSION,
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
+      headers,
       body: JSON.stringify({
         model,
         max_tokens: MAX_TOKENS_DEFAULT,
@@ -272,8 +286,34 @@ async function sendMessage() {
 
 // ---------- wire up ----------
 
+function applyModeVisibility() {
+  document.querySelectorAll('.hosted-mode-only').forEach(el => {
+    el.classList.toggle('hidden', IS_LOCAL_MODE);
+  });
+  document.querySelectorAll('.local-mode-only').forEach(el => {
+    el.classList.toggle('hidden', !IS_LOCAL_MODE);
+  });
+}
+
+async function tryAutoloadFromProxy() {
+  if (!IS_LOCAL_MODE) return;
+  try {
+    const r = await fetch('/api/session');
+    if (!r.ok) return;
+    const text = await r.text();
+    if (text && text.trim()) {
+      await loadText(text);
+    }
+  } catch (_) {
+    // Best-effort autoload; ignore failures.
+  }
+}
+
 function init() {
-  loadStoredKey();
+  applyModeVisibility();
+  if (!IS_LOCAL_MODE) {
+    loadStoredKey();
+  }
 
   els.forgetKeyBtn.addEventListener('click', () => {
     els.apiKeyInput.value = '';
@@ -328,12 +368,16 @@ function init() {
     }
   });
 
-  // Service worker — best-effort, do nothing if unsupported or fails.
-  if ('serviceWorker' in navigator) {
+  // Service worker — hosted mode only. In local mode there's no caching
+  // benefit and we don't want a SW lingering after the local server stops.
+  if (!IS_LOCAL_MODE && 'serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').catch(() => { /* ignore */ });
     });
   }
+
+  // If we're in local mode and the server pre-loaded a session, fetch it.
+  tryAutoloadFromProxy();
 }
 
 init();

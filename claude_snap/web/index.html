@@ -61,10 +61,27 @@
     </section>
 
     <section id="chat-section" class="card hidden">
-      <h2>3 &middot; Continue the conversation</h2>
-      <p class="hint">Ask a follow-up. The full unpacked session is sent as context to <code>api.anthropic.com</code> using the API key stored only in this browser.</p>
+      <h2>3 &middot; Continue the conversation <span class="optional">(optional)</span></h2>
+      <p class="hint">
+        Steps 1 &amp; 2 above are the whole experience for read-only use — no API key required.
+        Continue here only if you want to ask a follow-up. Doing so requires pasting your Anthropic
+        API key into this page (sent only to <code>api.anthropic.com</code>, stored only in this
+        browser's <code>localStorage</code>).
+      </p>
+      <p class="hint local-mode-only hidden">
+        <strong>Local mode.</strong> You're running this PWA via <code>claude-snap chat</code> on
+        your own machine. The API key comes from your shell's <code>ANTHROPIC_API_KEY</code> env
+        var via the local proxy — not from any field on this page. The browser never sees it.
+      </p>
+      <p class="hint hosted-mode-only">
+        <strong>Don't want to paste a key into a webpage?</strong>
+        Run locally instead: <code>pip install claude-snap</code>, then
+        <code>ANTHROPIC_API_KEY=sk-ant-… claude-snap chat &lt;file.snap.jsonl&gt;</code>.
+        Same UI, same model, but the key stays in your shell environment and only ever
+        reaches localhost. See <a href="https://github.com/achiii800/claude-snap#trust-modes" rel="noopener">trust modes</a>.
+      </p>
 
-      <div id="key-row" class="key-row">
+      <div id="key-row" class="key-row hosted-mode-only">
         <label for="api-key-input">Anthropic API key</label>
         <input type="password" id="api-key-input" autocomplete="off" placeholder="sk-ant-…" spellcheck="false" autocapitalize="off">
         <label class="checkbox">
