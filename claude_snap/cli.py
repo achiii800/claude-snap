@@ -1,12 +1,65 @@
-"""claude-snap CLI — pack, unpack, stats."""
+"""claude-snap CLI — pack, unpack, stats, chat."""
 
 from __future__ import annotations
 import argparse
 import json
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
 from . import codec
+
+
+def _copy_to_clipboard(text: str) -> tuple[bool, str]:
+    """
+    Best-effort copy `text` to the OS clipboard. Returns (ok, tool_used).
+    On macOS this enables Universal Clipboard — paste lands on iPhone/iPad
+    within ~1-2 seconds when on the same Apple ID + iCloud + Bluetooth.
+    """
+    if sys.platform == "darwin" and shutil.which("pbcopy"):
+        try:
+            subprocess.run(
+                ["pbcopy"], input=text.encode("utf-8"),
+                check=True, timeout=10,
+            )
+            return True, "pbcopy"
+        except (subprocess.SubprocessError, OSError):
+            return False, "pbcopy"
+
+    if sys.platform.startswith("linux"):
+        if shutil.which("wl-copy"):
+            try:
+                subprocess.run(
+                    ["wl-copy"], input=text.encode("utf-8"),
+                    check=True, timeout=10,
+                )
+                return True, "wl-copy"
+            except (subprocess.SubprocessError, OSError):
+                return False, "wl-copy"
+        if shutil.which("xclip"):
+            try:
+                subprocess.run(
+                    ["xclip", "-selection", "clipboard"],
+                    input=text.encode("utf-8"),
+                    check=True, timeout=10,
+                )
+                return True, "xclip"
+            except (subprocess.SubprocessError, OSError):
+                return False, "xclip"
+
+    if sys.platform == "win32" and shutil.which("clip"):
+        try:
+            # `clip` on Windows expects UTF-16LE.
+            subprocess.run(
+                ["clip"], input=text.encode("utf-16le"),
+                check=True, timeout=10,
+            )
+            return True, "clip"
+        except (subprocess.SubprocessError, OSError):
+            return False, "clip"
+
+    return False, "no-tool"
 
 
 def _cmd_pack(args):
@@ -22,6 +75,23 @@ def _cmd_pack(args):
     print(f"  events out: {s['events']} ({s['refs']} refs introduced)")
     print(f"  bytes:      {s['bytes_unpacked']} → {s['bytes_packed']}  "
           f"({s['compression_ratio']}× ratio)")
+
+    if args.clip:
+        try:
+            text = Path(out_path).read_text(encoding="utf-8")
+        except OSError as e:
+            print(f"  clip:       failed to read packed file: {e}", file=sys.stderr)
+            return
+        ok, tool = _copy_to_clipboard(text)
+        if ok:
+            size_kb = len(text.encode("utf-8")) / 1024
+            extra = ""
+            if sys.platform == "darwin":
+                extra = " (Universal Clipboard → paste on iPhone/iPad)"
+            print(f"  clip:       {size_kb:.1f} KB on clipboard via {tool}{extra}")
+        else:
+            print(f"  clip:       no clipboard tool available ({tool}); skipping",
+                  file=sys.stderr)
 
 
 def _cmd_unpack(args):
@@ -58,6 +128,10 @@ def main(argv=None):
     p_pack.add_argument("input", help="path to source .jsonl")
     p_pack.add_argument("-o", "--output",
                         help="output path (default: <input>.snap.jsonl)")
+    p_pack.add_argument("-c", "--clip", action="store_true",
+                        help="also copy the packed contents to your "
+                             "clipboard (uses Universal Clipboard on macOS "
+                             "→ paste on iPhone/iPad in seconds)")
     p_pack.set_defaults(func=_cmd_pack)
 
     p_unp = sub.add_parser("unpack", help="restore a packed JSONL")
