@@ -30,6 +30,28 @@ Zero runtime deps. Pure stdlib Python 3.9+. MIT.
 pip install claude-snap
 ```
 
+## Pick a session by name (no grepping)
+
+You don't need to know where Claude Code stores its session JSONLs.
+Every command that takes a session takes a **selector** — a path, a UUID
+prefix, or a fuzzy title substring. Empty defaults to the most recent.
+
+```bash
+claude-snap list                        # see all your sessions, newest first
+claude-snap list SGPDec                 # filter by substring
+
+claude-snap pack 'Analyze SGPDec'       # by title substring
+claude-snap pack 269b1190               # by UUID prefix
+claude-snap pack                        # most recent session
+claude-snap pack --clip 'SGPDec'        # …and put the .snap.jsonl on the clipboard
+                                        # (macOS Universal Clipboard → paste on iPhone)
+
+claude-snap chat 'SGPDec'               # same selector for the local chat surface
+```
+
+Ambiguous selectors don't guess — they print the candidate list and ask
+you to refine.
+
 ## Trust modes
 
 Three ways to use the chat surface, with different trust profiles.
