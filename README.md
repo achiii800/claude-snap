@@ -52,6 +52,27 @@ claude-snap chat 'SGPDec'               # same selector for the local chat surfa
 Ambiguous selectors don't guess — they print the candidate list and ask
 you to refine.
 
+### Tab completion (optional)
+
+```bash
+pip install 'claude-snap[completion]'
+
+# bash — add to ~/.bashrc (or ~/.bash_profile on macOS)
+eval "$(register-python-argcomplete claude-snap)"
+
+# zsh — add to ~/.zshrc
+autoload -U bashcompinit && bashcompinit
+eval "$(register-python-argcomplete claude-snap)"
+```
+
+After that, `claude-snap pack <TAB>` lists your sessions by UUID prefix
+with titles as descriptions (zsh shows them inline), and typing a few
+hex chars filters down. `claude-snap p<TAB>` completes the subcommand.
+
+argcomplete is opt-in — without `[completion]` installed the CLI behaves
+identically and just doesn't tab-complete. Zero runtime deps for the
+core install remains.
+
 ## Trust modes
 
 Three ways to use the chat surface, with different trust profiles.

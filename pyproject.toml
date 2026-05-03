@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "claude-snap"
-version = "0.4.0"
+version = "0.4.1"
 description = "Lossless structural codec for Claude Code session JSONLs — portable conversation snapshots that move between devices, plus a built-in localhost chat surface that keeps your API key out of the browser."
 readme = "README.md"
 license = { text = "MIT" }
@@ -32,6 +32,7 @@ dependencies = []
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "build>=1.0"]
 publish = ["build>=1.0", "twine>=4.0"]
+completion = ["argcomplete>=3.0"]
 
 [project.scripts]
 claude-snap = "claude_snap.cli:main"

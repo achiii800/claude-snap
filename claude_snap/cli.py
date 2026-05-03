@@ -1,4 +1,12 @@
-"""claude-snap CLI — pack, unpack, stats, chat, list."""
+"""claude-snap CLI — pack, unpack, stats, chat, list.
+
+Tab completion is opt-in via the `completion` extra:
+    pip install 'claude-snap[completion]'
+    eval "$(register-python-argcomplete claude-snap)"   # add to ~/.bashrc / ~/.zshrc
+
+When argcomplete is not installed, the CLI behaves identically — completion
+just doesn't fire.
+"""
 
 from __future__ import annotations
 import argparse
@@ -11,6 +19,33 @@ from typing import Optional
 
 from . import codec
 from . import sessions as ses
+
+
+def _session_completer(prefix, parsed_args, **kwargs):
+    """argcomplete completer for selector args.
+
+    Completes UUID prefixes (always unambiguous), sourced from
+    ~/.claude/projects/. Title substring matching still works without
+    completion — we deliberately don't try to complete free-text titles
+    because the shell quoting story is hairy and bash doesn't render
+    descriptions.
+    """
+    try:
+        rows = ses.enumerate_sessions()
+    except Exception:
+        return []
+    out = []
+    p = (prefix or "").lower()
+    for r in rows:
+        short = r.uuid[:8]
+        if not p or short.startswith(p):
+            # zsh shows the description; bash ignores it.
+            title = (r.title or r.first_user_text or "")[:60].replace("\n", " ")
+            if title:
+                out.append(f"{short}\t{title}")
+            else:
+                out.append(short)
+    return out
 
 
 def _copy_to_clipboard(text: str) -> tuple[bool, str]:
@@ -245,7 +280,8 @@ def main(argv=None):
     )
 
     p_pack = sub.add_parser("pack", help="compress a session JSONL")
-    p_pack.add_argument("input", nargs="?", help=selector_help)
+    pack_input = p_pack.add_argument("input", nargs="?", help=selector_help)
+    pack_input.completer = _session_completer
     p_pack.add_argument("-o", "--output",
                         help="output path (default: <input-stem>.snap.jsonl in cwd)")
     p_pack.add_argument("-c", "--clip", action="store_true",
@@ -268,7 +304,8 @@ def main(argv=None):
         help="open the bundled PWA in your browser via a localhost proxy "
              "that holds the API key (set ANTHROPIC_API_KEY in your shell)",
     )
-    p_chat.add_argument("input", nargs="?", help=selector_help)
+    chat_input = p_chat.add_argument("input", nargs="?", help=selector_help)
+    chat_input.completer = _session_completer
     p_chat.add_argument("--port", type=int, default=0,
                         help="port to bind on 127.0.0.1 (default: random free port)")
     p_chat.add_argument("--no-browser", action="store_true",
@@ -276,11 +313,21 @@ def main(argv=None):
     p_chat.set_defaults(func=_cmd_chat)
 
     p_list = sub.add_parser("list", help="list sessions in ~/.claude/projects/")
-    p_list.add_argument("search", nargs="?",
-                        help="optional substring to filter title / first user message / UUID")
+    list_search = p_list.add_argument(
+        "search", nargs="?",
+        help="optional substring to filter title / first user message / UUID")
+    list_search.completer = _session_completer
     p_list.add_argument("--limit", type=int, default=30,
                         help="max rows to show (default: 30, 0 = all)")
     p_list.set_defaults(func=_cmd_list)
+
+    # Wire up tab completion if argcomplete is available. Soft-import so
+    # the CLI works identically when it isn't.
+    try:
+        import argcomplete  # type: ignore
+        argcomplete.autocomplete(parser)
+    except ImportError:
+        pass
 
     args = parser.parse_args(argv)
     rc = args.func(args)

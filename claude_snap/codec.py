@@ -31,7 +31,7 @@ from .schema import (
 )
 
 
-CLAUDE_SNAP_VERSION = "0.4.0"
+CLAUDE_SNAP_VERSION = "0.4.1"
 
 # Tool families whose results are safe to dedup. Mutating tools
 # (Edit/Write/MultiEdit/NotebookEdit) and meta tools (TodoWrite/Task) are
